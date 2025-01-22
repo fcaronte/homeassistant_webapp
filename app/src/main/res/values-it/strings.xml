@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Home Assistant</string>
+    <string name="modify_url">Modifica URL</string>
     <string name="please_click_back_again_to_exit">Vai ancora INDIETRO per uscire</string>
+    <string name="ok">OK</string>
+    <string name="l_url_non_pu_essere_vuoto">L\'URL non può essere vuoto</string>
+    <string name="annulla">Annulla</string>
+    <string name="https_example_com">https://esempio.com</string>
+    <string name="inserisci_url_di_home_assistant">Inserisci URL di Home Assistant</string>
+    <string name="error_loading_page">Errore caricamento pagina: %1$s</string>
 </resources>

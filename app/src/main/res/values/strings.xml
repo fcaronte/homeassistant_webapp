@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">Home Assistant</string>
+    <string name="modify_url">Edit URL</string>
     <string name="please_click_back_again_to_exit">Please click BACK again to exit</string>
+    <string name="ok">OK</string>
+    <string name="l_url_non_pu_essere_vuoto">L\'URL can\'t be empty</string>
+    <string name="annulla">Ignore</string>
+    <string name="https_example_com">https://example.com</string>
+    <string name="inserisci_url_di_home_assistant">Put your Home Assistant URL</string>
+    <string name="error_loading_page">Error loading page: %1$s</string>
 </resources>
