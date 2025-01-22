@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Home Assistant</string>
+    <string name="please_click_back_again_to_exit">Vai ancora INDIETRO per uscire</string>
+</resources>
