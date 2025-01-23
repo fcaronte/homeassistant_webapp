@@ -1,11 +1,14 @@
 package com.fcaronte.homeassistant
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Browser
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.WebResourceError
@@ -23,6 +26,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import androidx.appcompat.view.ContextThemeWrapper
 import android.util.Log
+import android.webkit.URLUtil
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -43,6 +47,23 @@ class MainActivity : AppCompatActivity() {
         webView.clearCache(false)
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
+        webView.setOnLongClickListener { view ->
+            val hitTestResult = webView.hitTestResult
+            if (hitTestResult.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
+                val url = hitTestResult.extra
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                view.context.startActivity(browserIntent)
+                true // Indicate that the long click was handled
+            } else {
+                false // Let the WebView handle other long clicks
+            }
+        }
+
+        // Carica l'URL salvato e aprilo nel WebView
+        loadSavedUrl()
+
+        handleIntent(intent)
+
         // Imposta il listener per il refresh
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
 
@@ -50,7 +71,8 @@ class MainActivity : AppCompatActivity() {
             if (webView.scrollY == 0) {
                 swipeRefreshLayout.isRefreshing = true
                 webView.reload()
-            } else {swipeRefreshLayout.isRefreshing = false
+            } else {
+                swipeRefreshLayout.isRefreshing = false
             }
         }
 
@@ -89,16 +111,72 @@ class MainActivity : AppCompatActivity() {
                 swipeRefreshLayout.isRefreshing = false
             }
 
+            private val appLinks = mapOf(
+                "facebook" to Regex("^(?:fb://|https?://(?:www\\.)?facebook\\.com/)(.*)"),
+                "instagram" to Regex("^(?:instagram://|https?://(?:www\\.)?instagram\\.com/)(.*)"),
+                "tiktok" to Regex("^(?:snssdk1233://|https?://(?:www\\.)?tiktok\\.com/)(.*)"),
+                "youtube" to Regex("^(?:vnd.youtube://|https?://(?:www\\.)?youtube\\.com/)(.*)"),
+                "playstore" to Regex("^(?:market://|https?://play\\.google\\.com/)(.*)"),
+                "telegram" to Regex("^(?:tg://|https?://t\\.me/)(.*)")
+                // Aggiungi altre app e regex qui
+            )
+            private val downloadExtensions = listOf(".apk", ".zip", ".pdf", ".mp3", ".jpg", ".jpeg", ".png", ".gif") // Add more as needed
+            private val downloadPatterns = listOf("/download", "?download=") // Add more as needed
+
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                val url = request.url.toString()// Controlla se l'URL ha uno schema sconosciuto
+                // Check for download links first
+                if (downloadExtensions.any { url.endsWith(it, ignoreCase = true) } ||
+                    downloadPatterns.any { url.contains(it, ignoreCase = true) }) {
+                    // Open download link in stock browser
+                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    view.context.startActivity(browserIntent)
+                    return true
+                }
+                for ((appName, regex) in appLinks) {
+                    Log.d("WebViewClient", "Checking App from url: $appName")
+                    if (regex.matches(url)) {
+                        // Per gli altri schemi, prova ad aprire l'URL in un'altra app
+                        try {
+                            // Ottieni i cookie solo se l'URL è valido e la WebView lo ha caricato
+                            if (URLUtil.isValidUrl(url) && view.url == url) {
+                                val cookies = cookieManager.getCookie(url)
+                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                browserIntent.putExtra(Browser.EXTRA_HEADERS, Bundle().apply {
+                                    putString("Cookie", cookies)
+                                })
+                                startActivity(browserIntent)
+                            } else {
+                                // Se l'URL non è valido o non è stato caricato dalla WebView, apri nel browser stock senza cookie
+                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                startActivity(browserIntent)
+                            }
+                            return true // Indica che l'URL è stato gestito
+                        } catch (e: ActivityNotFoundException) {
+                            // Se nessuna app può gestire l'URL, apri nel browser stock senza cookie
+                            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            startActivity(browserIntent)
+                            return true
+                        }
+                    }
+                }
+                // Lascia che la WebView gestisca gli URL HTTP e HTTPS
+                return false
+            }
+
             override fun onReceivedError(
                 view: WebView,
                 request: WebResourceRequest,
                 error: WebResourceError
             ) {
+                /*
+                //Mostra toast errore su app
                 Toast.makeText(
                     this@MainActivity,
                     getString(R.string.error_loading_page, error.description),
                     Toast.LENGTH_LONG
                 ).show()
+                 */
                 Log.d("WebViewClient", "Received error: ${error.description}")
             }
         }
@@ -115,7 +193,6 @@ class MainActivity : AppCompatActivity() {
         val savedUrl = sharedPreferences.getString(prefURL, null)
 
         if (savedUrl.isNullOrEmpty()) {
-            findViewById<TextInputLayout>(R.id.textInputLayoutUrl).visibility = View.VISIBLE
             showUrlInputDialog(null)
         } else {
             webView.loadUrl(savedUrl)
