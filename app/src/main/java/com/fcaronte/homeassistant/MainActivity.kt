@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import androidx.appcompat.view.ContextThemeWrapper
+import android.util.Log
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -46,17 +47,27 @@ class MainActivity : AppCompatActivity() {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
 
         swipeRefreshLayout.setOnRefreshListener {
-            webView.reload()
+            if (webView.scrollY == 0) {
+                swipeRefreshLayout.isRefreshing = true
+                webView.reload()
+            } else {swipeRefreshLayout.isRefreshing = false
+            }
         }
 
         // Doppio swipe per uscire
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (isBackPressedOnce) {
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else if (isBackPressedOnce) {
                     finish()
                 } else {
                     isBackPressedOnce = true
-                    Toast.makeText(this@MainActivity, getString(R.string.please_click_back_again_to_exit), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.please_click_back_again_to_exit),
+                        Toast.LENGTH_SHORT
+                    ).show()
                     Handler(Looper.getMainLooper()).postDelayed({ isBackPressedOnce = false }, 2000)
                 }
             }
@@ -88,11 +99,8 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.error_loading_page, error.description),
                     Toast.LENGTH_LONG
                 ).show()
+                Log.d("WebViewClient", "Received error: ${error.description}")
             }
-        }
-
-        swipeRefreshLayout.setOnRefreshListener {
-            webView.reload()
         }
 
         // Carica l'URL salvato e aprilo nel WebView
