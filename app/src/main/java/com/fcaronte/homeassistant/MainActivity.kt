@@ -23,7 +23,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import androidx.appcompat.view.ContextThemeWrapper
 import android.util.Log
 import android.webkit.URLUtil
@@ -58,11 +57,6 @@ class MainActivity : AppCompatActivity() {
                 false // Let the WebView handle other long clicks
             }
         }
-
-        // Carica l'URL salvato e aprilo nel WebView
-        loadSavedUrl()
-
-        handleIntent(intent)
 
         // Imposta il listener per il refresh
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
